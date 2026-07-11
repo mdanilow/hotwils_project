@@ -25,7 +25,7 @@
 #include "uni_virtual_device.h"
 
 static const char* TAG = "console";
-#define PROMPT_STR "bp32"
+#define PROMPT_STR "subaru"
 
 static char buf_disconnect[16];
 
