@@ -16,13 +16,8 @@
 
 #include "sdkconfig.h"
 #include "controller_state.h"
+#include "servo_control.h"
 
-#define SERVO_GPIO      GPIO_NUM_9
-#define SERVO_TIMER     LEDC_TIMER_0
-#define SERVO_CHANNEL   LEDC_CHANNEL_0
-#define SERVO_FREQ_HZ   50
-#define SERVO_RES_BITS  LEDC_TIMER_14_BIT
-const unsigned int servo_duty_us = 1000000 / SERVO_FREQ_HZ;
 
 // Sanity check
 #ifndef CONFIG_BLUEPAD32_PLATFORM_CUSTOM
@@ -42,38 +37,6 @@ static void btstack_task(void* task_arg) {
     btstack_run_loop_execute();
 }
 
-void servo_init(void) {
-    ledc_timer_config_t timer_conf = {
-        .speed_mode = LEDC_LOW_SPEED_MODE,
-        .timer_num = SERVO_TIMER,
-        .duty_resolution = SERVO_RES_BITS,
-        .freq_hz = SERVO_FREQ_HZ,
-        .clk_cfg = LEDC_AUTO_CLK,
-    };
-    ledc_timer_config(&timer_conf);
-
-    ledc_channel_config_t channel_conf = {
-        .gpio_num = SERVO_GPIO,
-        .speed_mode = LEDC_LOW_SPEED_MODE,
-        .channel = SERVO_CHANNEL,
-        .timer_sel = SERVO_TIMER,
-        .duty = 0,
-        .hpoint = 0,
-    };
-    ledc_channel_config(&channel_conf);
-}
-
-void servo_set_angle(float angle) {
-    if (angle < 0) angle = 0;
-    if (angle > 180) angle = 180;
-
-    float pulse_us = 1000 + (angle * 1000 / 180);
-    int max_duty = (1 << SERVO_RES_BITS) - 1;
-    int duty = (pulse_us * max_duty) / servo_duty_us;
-
-    ledc_set_duty(LEDC_LOW_SPEED_MODE, SERVO_CHANNEL, duty);
-    ledc_update_duty(LEDC_LOW_SPEED_MODE, SERVO_CHANNEL);
-}
 
 int app_main(void) {
     // If you enable HCI Dump better to disable "Bluepad32 USB Console" from "idf.py menuconfig".
@@ -90,6 +53,7 @@ int app_main(void) {
     xTaskCreate(btstack_task, "btstack_task", 16384, NULL, 5, NULL);
 
     servo_init();
+    register_servo_console_cmd();
     controller_state_init();
     controller_state_t controller;
 

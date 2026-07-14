@@ -1,4 +1,7 @@
-set(srcs "main.c" "my_platform.c" "controller_state.c")
+set(srcs "main.c"
+        "my_platform.c"
+        "controller_state.c"
+        "servo_control.c")
 
 set(requires "bluepad32" "btstack")
 
