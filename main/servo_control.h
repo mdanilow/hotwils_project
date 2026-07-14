@@ -10,12 +10,12 @@
 #define SERVO_CHANNEL       LEDC_CHANNEL_0
 #define SERVO_FREQ_HZ       50
 #define SERVO_RES_BITS      LEDC_TIMER_14_BIT
-#define SERVO_PULSE_MIN_US  800
-#define SERVO_PULSE_MAX_US  2200
-#define SERVO_DUTY_US       1000000 / SERVO_FREQ_HZ;
+#define SERVO_PULSE_MIN_US  1050
+#define SERVO_PULSE_MAX_US  2950
+#define SERVO_DUTY_US       (1000000 / SERVO_FREQ_HZ);
 
 
 void servo_init(void);
-void servo_set_pulse_us(int pulse_us);
+void servo_set_pulse_us(float pulse_us);
 void servo_set_angle(float angle);
 void register_servo_console_cmd(void);
