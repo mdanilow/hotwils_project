@@ -62,7 +62,8 @@ int app_main(void) {
         controller_state_read(&controller);
         if(controller.connected){
             // axis_x is from -512 to 511, scale it to angle 0 - 180
-            float servo_angle = 180 * (controller.axis_x + 512) / 1024;
+            static int servo_safe_range = SERVO_MAX_SAFE_ANGLE - SERVO_MIN_SAFE_ANGLE;
+            float servo_angle = SERVO_MIN_SAFE_ANGLE + servo_safe_range * (controller.axis_x + 512) / 1024;
             servo_set_angle(servo_angle);
             logi("throttle = %d, axis_x = %d, servo_angle = %f\n", controller.throttle, controller.axis_x, servo_angle);
         }

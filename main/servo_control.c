@@ -24,8 +24,9 @@ void servo_init(void) {
 }
 
 void servo_set_pulse_us(float pulse_us){
-    if(pulse_us < SERVO_PULSE_MIN_US) pulse_us = SERVO_PULSE_MIN_US;
-    if(pulse_us > SERVO_PULSE_MAX_US) pulse_us = SERVO_PULSE_MAX_US;
+    logi("servo pulse us: %f", pulse_us);
+    if(pulse_us < SERVO_SAFE_PULSE_MIN_US) pulse_us = SERVO_SAFE_PULSE_MIN_US;
+    if(pulse_us > SERVO_SAFE_PULSE_MAX_US) pulse_us = SERVO_SAFE_PULSE_MAX_US;
 
     int max_duty = (1 << SERVO_RES_BITS) - 1;
     int duty = (pulse_us * max_duty) / SERVO_DUTY_US;
@@ -34,14 +35,14 @@ void servo_set_pulse_us(float pulse_us){
 }
 
 void servo_set_angle(float angle) {
-    if(angle < 0) angle = 0;
-    if(angle > 180) angle = 180;
+    if(angle < SERVO_MIN_SAFE_ANGLE) angle = SERVO_MIN_SAFE_ANGLE;
+    if(angle > SERVO_MAX_SAFE_ANGLE) angle = SERVO_MAX_SAFE_ANGLE;
 
     static const int PULSE_RANGE_WIDTH = SERVO_PULSE_MAX_US - SERVO_PULSE_MIN_US;
     float pulse_us = SERVO_PULSE_MIN_US + (angle * PULSE_RANGE_WIDTH / 180);
     servo_set_pulse_us(pulse_us);
 }
-// ----------------------- console command
+// ----------------------- console commands
 
 static struct {
     struct arg_int* pulse_width_us;
