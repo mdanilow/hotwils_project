@@ -1,7 +1,8 @@
 set(srcs "main.c"
         "my_platform.c"
         "controller_state.c"
-        "servo_control.c")
+        "servo_control.c"
+        "motor_control.c")
 
 set(requires "bluepad32" "btstack")
 

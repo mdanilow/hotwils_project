@@ -6,6 +6,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <driver/ledc.h>
+#include <driver/gpio.h>
 
 #include <btstack_port_esp32.h>
 #include <btstack_run_loop.h>
@@ -17,12 +18,20 @@
 #include "sdkconfig.h"
 #include "controller_state.h"
 #include "servo_control.h"
+#include "motor_control.h"
 
+// #define LED_GPIO GPIO_NUM_23
 
 // Sanity check
 #ifndef CONFIG_BLUEPAD32_PLATFORM_CUSTOM
 #error "Must use BLUEPAD32_PLATFORM_CUSTOM"
 #endif
+
+typedef enum {
+    FORWARD,
+    REVERSE
+} GEAR_t;
+
 
 // Defined in my_platform.c
 struct uni_platform* get_my_platform(void);
@@ -52,20 +61,65 @@ int app_main(void) {
     // Start infinite btstack task
     xTaskCreate(btstack_task, "btstack_task", 16384, NULL, 5, NULL);
 
+    // servo and controller init
     servo_init();
+    motor_init();
     register_servo_console_cmd();
     controller_state_init();
     controller_state_t controller;
+
+    GEAR_t gear = FORWARD;
+
+    // gpio init
+    // gpio_config_t io_conf = {
+    //     .pin_bit_mask = (1ULL << LED_GPIO),
+    //     .mode = GPIO_MODE_OUTPUT,
+    //     .pull_up_en = GPIO_PULLUP_DISABLE,
+    //     .pull_down_en = GPIO_PULLDOWN_DISABLE,
+    //     .intr_type = GPIO_INTR_DISABLE,
+    // };
+    // gpio_config(&io_conf);
 
     //control loop
     while(true){
         controller_state_read(&controller);
         if(controller.connected){
-            // axis_x is from -512 to 511, scale it to angle 0 - 180
+            // gpio_set_level(LED_GPIO, 1);
+
+            // servo control
+            // axis_x is from -512 to 511, scale it to safe angle range
             static int servo_safe_range = SERVO_MAX_SAFE_ANGLE - SERVO_MIN_SAFE_ANGLE;
-            float servo_angle = SERVO_MIN_SAFE_ANGLE + servo_safe_range * (controller.axis_x + 512) / 1024;
+            float servo_angle = SERVO_MIN_SAFE_ANGLE + servo_safe_range * (-controller.axis_x + 512) / 1024;
             servo_set_angle(servo_angle);
-            logi("throttle = %d, axis_x = %d, servo_angle = %f\n", controller.throttle, controller.axis_x, servo_angle);
+
+            // gear control
+            if(controller.triangle_button) gear = FORWARD;
+            else if(controller.cross_button) gear = REVERSE;
+
+            // motor control
+            if(gear == FORWARD){
+                motor_forward();
+                motor_set_pwm_10bit(controller.throttle);
+            }
+            else if(gear == REVERSE){
+                motor_reverse();
+                motor_set_pwm_10bit(controller.throttle);
+            }
+
+            logi("throttle = %d, axis_x = %d, servo_angle = %f, buttons=0x%04x, misc=0x%02x\n",
+                controller.throttle,
+                controller.axis_x,
+                servo_angle,
+                controller.buttons,
+                controller.misc_buttons
+            );
+        }
+        else{
+            // gpio_set_level(LED_GPIO, 1);
+            // vTaskDelay(pdMS_TO_TICKS(500));
+            // gpio_set_level(LED_GPIO, 0);
+            // vTaskDelay(pdMS_TO_TICKS(500));
+            motor_set_pwm_10bit(0);
         }
         vTaskDelay(pdMS_TO_TICKS(20)); // 50Hz control
     }
