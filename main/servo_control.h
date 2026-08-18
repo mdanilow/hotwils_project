@@ -26,4 +26,7 @@
 void servo_init(void);
 void servo_set_pulse_us(float pulse_us);
 void servo_set_angle(float angle);
+void servo_set_offset_degrees(float offset);
+float get_servo_neutral_angle(void);
+float get_servo_offset_degrees(void);
 void register_servo_console_cmd(void);

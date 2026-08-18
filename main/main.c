@@ -70,15 +70,8 @@ int app_main(void) {
 
     GEAR_t gear = FORWARD;
 
-    // gpio init
-    // gpio_config_t io_conf = {
-    //     .pin_bit_mask = (1ULL << LED_GPIO),
-    //     .mode = GPIO_MODE_OUTPUT,
-    //     .pull_up_en = GPIO_PULLUP_DISABLE,
-    //     .pull_down_en = GPIO_PULLDOWN_DISABLE,
-    //     .intr_type = GPIO_INTR_DISABLE,
-    // };
-    // gpio_config(&io_conf);
+    // set steering wheels to neutral on startup
+    servo_set_angle(get_servo_neutral_angle());
 
     //control loop
     while(true){
@@ -89,7 +82,7 @@ int app_main(void) {
             // servo control
             // axis_x is from -512 to 511, scale it to safe angle range
             static int servo_safe_range = SERVO_MAX_SAFE_ANGLE - SERVO_MIN_SAFE_ANGLE;
-            float servo_angle = SERVO_MIN_SAFE_ANGLE + servo_safe_range * (-controller.axis_x + 512) / 1024;
+            float servo_angle = SERVO_MIN_SAFE_ANGLE + get_servo_offset_degrees() + servo_safe_range * (-controller.axis_x + 512) / 1024;
             servo_set_angle(servo_angle);
 
             // gear control
@@ -106,13 +99,13 @@ int app_main(void) {
                 motor_set_pwm_10bit(controller.throttle);
             }
 
-            logi("throttle = %d, axis_x = %d, servo_angle = %f, buttons=0x%04x, misc=0x%02x\n",
-                controller.throttle,
-                controller.axis_x,
-                servo_angle,
-                controller.buttons,
-                controller.misc_buttons
-            );
+            // logi("throttle = %d, axis_x = %d, servo_angle = %f, buttons=0x%04x, misc=0x%02x\n",
+            //     controller.throttle,
+            //     controller.axis_x,
+            //     servo_angle,
+            //     controller.buttons,
+            //     controller.misc_buttons
+            // );
         }
         else{
             // gpio_set_level(LED_GPIO, 1);
@@ -120,6 +113,7 @@ int app_main(void) {
             // gpio_set_level(LED_GPIO, 0);
             // vTaskDelay(pdMS_TO_TICKS(500));
             motor_set_pwm_10bit(0);
+            servo_set_angle(get_servo_neutral_angle());
         }
         vTaskDelay(pdMS_TO_TICKS(20)); // 50Hz control
     }

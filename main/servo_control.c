@@ -1,6 +1,19 @@
 #include "servo_control.h"
 
 
+static float servo_offset_degrees = -6;
+
+float get_servo_neutral_angle(void){
+    return 90 + servo_offset_degrees;
+}
+
+float get_servo_offset_degrees(void){
+    return servo_offset_degrees;
+}
+
+void servo_set_offset_degrees(float new_offset){
+    servo_offset_degrees = new_offset;
+}
 
 void servo_init(void) {
     ledc_timer_config_t timer_conf = {
@@ -24,8 +37,8 @@ void servo_init(void) {
 }
 
 void servo_set_pulse_us(float pulse_us){
-    logi("servo pulse us: %f", pulse_us);
-    if(pulse_us < SERVO_SAFE_PULSE_MIN_US) pulse_us = SERVO_SAFE_PULSE_MIN_US;
+    // logi("servo pulse us: %f", pulse_us);
+    if(pulse_us != 0 && pulse_us < SERVO_SAFE_PULSE_MIN_US) pulse_us = SERVO_SAFE_PULSE_MIN_US;
     if(pulse_us > SERVO_SAFE_PULSE_MAX_US) pulse_us = SERVO_SAFE_PULSE_MAX_US;
 
     int max_duty = (1 << SERVO_RES_BITS) - 1;
@@ -54,6 +67,11 @@ static struct {
     struct arg_end* end;
 } set_servo_angle_cmd_args;
 
+static struct {
+    struct arg_dbl* servo_offset_degrees;
+    struct arg_end* end;
+} set_servo_offset_degrees_cmd_args;
+
 
 static int set_servo_pulse_us_cmd_func(int argc, char** argv) {
     int nerrors = arg_parse(argc, argv, (void**)&set_servo_pulse_us_cmd_args);
@@ -75,6 +93,17 @@ static int set_servo_angle_cmd_func(int argc, char** argv) {
     return 0;
 }
 
+static int set_servo_offset_degrees_cmd_func(int argc, char** argv) {
+    int nerrors = arg_parse(argc, argv, (void**)&set_servo_offset_degrees_cmd_args);
+    if (nerrors != 0) {
+        arg_print_errors(stderr, set_servo_offset_degrees_cmd_args.end, argv[0]);
+        return 1;
+    }
+    servo_set_offset_degrees(set_servo_offset_degrees_cmd_args.servo_offset_degrees->dval[0]);
+    return 0;
+}
+
+
 void register_servo_console_cmd(void) {
     set_servo_pulse_us_cmd_args.pulse_width_us =
         arg_int1(NULL, NULL, "<pulse_us>", "Pulse width in microseconds");
@@ -83,6 +112,10 @@ void register_servo_console_cmd(void) {
     set_servo_angle_cmd_args.servo_angle =
         arg_dbl1(NULL, NULL, "<degrees>", "Angle in degrees [0 - 180]");
     set_servo_angle_cmd_args.end = arg_end(1);
+
+    set_servo_offset_degrees_cmd_args.servo_offset_degrees =
+        arg_dbl1(NULL, NULL, "<degrees>", "Servo angle offset in degrees, for controller");
+    set_servo_offset_degrees_cmd_args.end = arg_end(1);
 
     const esp_console_cmd_t cmd_set_servo_pulse_us = {
         .command = "set_servo_pulse_us",
@@ -98,6 +131,14 @@ void register_servo_console_cmd(void) {
         .func = &set_servo_angle_cmd_func,
         .argtable = &set_servo_angle_cmd_args,
     };
+    const esp_console_cmd_t cmd_set_servo_offset_degrees = {
+        .command = "set_servo_offset",
+        .help = "Set servo offset in degrees (move the neutral position)",
+        .hint = NULL,
+        .func = &set_servo_offset_degrees_cmd_func,
+        .argtable = &set_servo_offset_degrees_cmd_args,
+    };
     ESP_ERROR_CHECK(esp_console_cmd_register(&cmd_set_servo_pulse_us));
     ESP_ERROR_CHECK(esp_console_cmd_register(&cmd_set_servo_angle));
+    ESP_ERROR_CHECK(esp_console_cmd_register(&cmd_set_servo_offset_degrees));
 }
