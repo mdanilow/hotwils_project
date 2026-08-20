@@ -37,7 +37,7 @@ void servo_init(void) {
 }
 
 void servo_set_pulse_us(float pulse_us){
-    // logi("servo pulse us: %f", pulse_us);
+    // ESP_LOGI("SERVO_CMD", "servo pulse us: %f", pulse_us);
     if(pulse_us != 0 && pulse_us < SERVO_SAFE_PULSE_MIN_US) pulse_us = SERVO_SAFE_PULSE_MIN_US;
     if(pulse_us > SERVO_SAFE_PULSE_MAX_US) pulse_us = SERVO_SAFE_PULSE_MAX_US;
 

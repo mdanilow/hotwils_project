@@ -3,6 +3,7 @@
 
 #include <argtable3/argtable3.h>
 #include <esp_console.h>
+#include <esp_log.h>
 #include <uni.h>
 #include <driver/ledc.h>
 
@@ -15,10 +16,10 @@
 #define SERVO_PULSE_MIN_US  1050
 #define SERVO_PULSE_MAX_US  2950
 // safe pulse range
-#define SERVO_SAFE_PULSE_MIN_US  1419
+#define SERVO_SAFE_PULSE_MIN_US  1345
 #define SERVO_SAFE_PULSE_MAX_US  2580
 // safe angle range
-#define SERVO_MIN_SAFE_ANGLE 35
+#define SERVO_MIN_SAFE_ANGLE 28
 #define SERVO_MAX_SAFE_ANGLE 145
 #define SERVO_DUTY_US       (1000000 / SERVO_FREQ_HZ);
 
